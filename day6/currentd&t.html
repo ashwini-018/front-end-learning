@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Show Current Date & Time</title>
+
+
+    <!--Bootstrap CSS-->
+    <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet" 
+       >
+</head>   
+</body class="bg-light d-flex flex-column justify-content-center align-items-center vn-100">
+
+<div class="container text-center p-4 bg-white rounded shadow"style="max-width:400px;">
+    <h3 class="text-primary mb-4">Show Current Date & Time </h3>
+
+    <button class="btn btn-dark mb-3"onclick="showTime()">Show Now</button>
+
+    <input
+      type="text"
+      id="res"
+      class="form-control text -center"
+      placeholder="Result will appear here"
+      >
+    </div>
+
+
+    <script>
+        function showTime() {
+            document.getElementById("res").value=new Date().toLocalString();
+        }
+    </script>
+
+    <!--Bootstrap Js (optional for some features)-->
+    <script src-"h"
+</html>
