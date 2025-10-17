@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Winter Arc Challenge</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for the progress graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Google Fonts for a sleek look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .score-update {
+            animation: pulse 0.5s ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex justify-center p-4 sm:p-6">
+
+    <div id="loading-state" class="text-center mt-20">
+        <h1 class="text-2xl font-bold text-gray-400">Initializing Winter Arc...</h1>
+        <p class="text-gray-500">Authenticating and connecting to the database.</p>
+    </div>
+
+    <div id="app" class="w-full max-w-6xl hidden">
+        <header class="text-center my-6">
+            <h1 class="text-4xl font-black tracking-tighter">Winter Arc</h1>
+            <p id="today-date" class="text-gray-400"></p>
+        </header>
+
+        <!-- Automatic Motivation section -->
+        <div class="bg-gray-800 p-4 rounded-lg mb-8 text-center border border-purple-500 shadow-lg max-w-md mx-auto">
+            <p class="text-sm font-semibold text-gray-400 mb-2">Quote of the Day</p>
+            <div id="quote-display" class="text-gray-300 italic min-h-[4rem] flex items-center justify-center p-2 border border-gray-700 rounded-md bg-gray-900">
+                <!-- Quote will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Two-column layout for tasks and leaderboard -->
+        <div class="flex flex-col md:flex-row md:space-x-8">
+
+            <!-- Left Column: Tasks -->
+            <div class="w-full md:w-1/2">
+                <h2 class="text-2xl font-bold mb-4 text-center md:text-left">DAILY TASKS</h2>
+                <div id="task-list" class="space-y-3">
+                    <!-- Tasks will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <!-- Right Column: Leaderboard & Graphs -->
+            <div class="w-full md:w-1/2 mt-8 md:mt-0">
+                 <!-- User ID Display -->
+                <div class="bg-gray-800 p-4 rounded-lg mb-6 text-center">
+                    <p class="text-sm font-semibold text-gray-400">Your User ID (Share this with your cousin):</p>
+                    <p id="user-id-display" class="font-mono text-teal-400 break-all cursor-pointer" title="Click to copy"></p>
+                </div>
+
+                <!-- Leaderboard -->
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-center text-white mb-4">LEADERBOARD</h2>
+                    <div class="flex justify-around items-start">
+                        <!-- Player 1 (Musa) -->
+                        <div class="text-center flex flex-col items-center">
+                            <div id="player-0-score-bg" class="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold text-white transition-all duration-300 bg-teal-500">
+                               <span id="player-0-score">0</span>
+                            </div>
+                            <div class="flex items-center mt-3">
+                                <img src="https://wallpapercave.com/wp/wp8913058.jpg" alt="Toji Fushiguro" class="w-8 h-8 rounded-full object-cover border-2 border-teal-500 mr-2">
+                                <p id="player-0-name" class="font-semibold text-gray-300">Musa</p>
+                            </div>
+                        </div>
+                        <!-- Player 2 (Abdun Nafi) -->
+                        <div class="text-center flex flex-col items-center">
+                             <div id="player-1-score-bg" class="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold text-white transition-all duration-300 bg-indigo-500">
+                               <span id="player-1-score">0</span>
+                            </div>
+                            <div class="flex items-center mt-3">
+                                 <img src="https://image-cdn-fa.spotifycdn.com/image/ab67706c0000da8410953b57efddb0e988d426cc" alt="Baki Hanma" class="w-8 h-8 rounded-full object-cover border-2 border-indigo-500 mr-2">
+                                 <p id="player-1-name" class="font-semibold text-gray-300">Abdun Nafi</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Progress Graph -->
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg mt-8">
+                    <h2 class="text-2xl font-bold text-center text-white mb-4">DAILY PROGRESS (LAST 7 DAYS)</h2>
+                    <canvas id="progress-chart"></canvas>
+                </div>
+
+                <!-- Weight Graph -->
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg mt-8">
+                    <h2 class="text-2xl font-bold text-center text-white mb-4">WEIGHT PROGRESSION</h2>
+                    
+                    <div class="mb-4 p-4 bg-gray-700 rounded-lg flex items-center space-x-3">
+                        <input type="number" id="weight-input" placeholder="Enter weight (e.g., 75.5)" class="flex-grow p-2 bg-gray-600 border border-gray-500 rounded-md focus:outline-none focus:border-purple-500 text-white">
+                        <button id="save-weight-btn" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-500 transition-colors font-semibold">Save</button>
+                    </div>
+
+                    <canvas id="weight-chart"></canvas>
+                </div>
+                
+                <!-- Reset Button Section -->
+                <div class="bg-gray-800 p-4 rounded-lg mt-8 text-center border border-red-500">
+                    <p class="text-sm font-semibold text-red-400 mb-2">Danger Zone</p>
+                    <button id="reset-all-data-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition-colors w-full">
+                        Reset All Challenge Data
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, runTransaction, deleteField, collection, query, orderBy, limit, increment, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- 1. CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBLN5eg3kObWMTXdX2O6HHoPBHbzNpMOos",
+            authDomain: "winterarc25-b4351.firebaseapp.com",
+            projectId: "winterarc25-b4351",
+            storageBucket: "winterarc25-b4351.appspot.com",
+            messagingSenderId: "527841290031",
+            appId: "1:527841290031:web:c8c0bf8100f2f5e83d63da"
+        };
+        const appId = firebaseConfig.projectId; 
+
+        const PLAYER_NAMES = { me: 'Musa', cousin: 'Abdun Nafi' };
+        
+        const DAILY_QUOTE = "The difference between a master and a beginner is that the master has failed more times than the beginner has ever tried.";
+
+        const NECESSARY_TASKS = [
+            { id: 'wake-up', title: 'Wake up at 4 AM', points: 20 },
+            { id: 'prayers', title: 'Complete 5 Daily Prayers', points: 20 },
+            { id: 'workout', title: 'Workout Daily', points: 20 },
+            { id: 'cold-shower', title: 'Daily Cold Shower', points: 20 },
+        ];
+        const OPTIONAL_TASK = { id: 'optional', title: 'Optional Goal', points: 20 };
+        
+        // --- 2. DOM ELEMENTS & STATE ---
+        const loadingDiv = document.getElementById('loading-state');
+        const appDiv = document.getElementById('app');
+        const taskListContainer = document.getElementById('task-list');
+        const userIdDisplay = document.getElementById('user-id-display');
+        const todayDateDisplay = document.getElementById('today-date');
+        const quoteDisplay = document.getElementById('quote-display');
+        const chartCanvas = document.getElementById('progress-chart');
+        const weightChartCanvas = document.getElementById('weight-chart');
+        const resetButton = document.getElementById('reset-all-data-btn');
+        const weightInput = document.getElementById('weight-input');
+        const saveWeightButton = document.getElementById('save-weight-btn');
+        
+        let db, auth, userId, cousinId, currentScores, dailyDoc = {}, chartInstance, weightChartInstance;
+        
+        // --- 3. HELPER FUNCTIONS ---
+        const getGameDateKey = () => {
+            const now = new Date();
+            const resetTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 22, 30, 0); // 10:30 PM
+            const gameDate = new Date(now);
+            if (now >= resetTime) gameDate.setDate(gameDate.getDate() + 1);
+            return gameDate.toISOString().split('T')[0];
+        };
+
+        // --- 4. CORE LOGIC ---
+        async function main() {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    initializeAppLogic();
+                } else {
+                   try { await signInAnonymously(auth); } catch (error) { console.error(error) }
+                }
+            });
+        }
+
+        function initializeAppLogic() {
+            userIdDisplay.textContent = userId;
+            userIdDisplay.addEventListener('click', () => { navigator.clipboard.writeText(userId); alert('User ID copied!'); });
+            todayDateDisplay.textContent = `Game Day: ${getGameDateKey()}`;
+            resetButton.addEventListener('click', handleFullReset);
+            saveWeightButton.addEventListener('click', handleSaveWeight);
+
+            if (!localStorage.getItem('cousinId')) {
+                 const inputId = prompt("Welcome! If you are the second player, enter your cousin's User ID. Otherwise, press Cancel.");
+                if (inputId) localStorage.setItem('cousinId', inputId.trim());
+            }
+            cousinId = localStorage.getItem('cousinId') || null;
+
+            loadingDiv.classList.add('hidden');
+            appDiv.classList.remove('hidden');
+
+            // Listeners
+            const leaderboardDocRef = doc(db, `artifacts/${appId}/public/data/winter-arc-challenge`, 'leaderboard');
+            onSnapshot(leaderboardDocRef, (docSnap) => {
+                currentScores = docSnap.exists() ? docSnap.data().scores || {} : {};
+                renderUI();
+            });
+
+            const dailyTasksDocRef = doc(db, `artifacts/${appId}/public/data/winter-arc-tasks`, getGameDateKey());
+            onSnapshot(dailyTasksDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    dailyDoc = docSnap.data();
+                } else {
+                    const initialDailyData = { tasks: {}, optionalTitles: {}, quote: DAILY_QUOTE };
+                    setDoc(dailyTasksDocRef, initialDailyData);
+                    dailyDoc = initialDailyData;
+                }
+                renderUI();
+            });
+            
+            const dailyScoresColRef = collection(db, `artifacts/${appId}/public/data/winter-arc-daily-scores`);
+            const qScores = query(dailyScoresColRef, orderBy("date", "desc"), limit(7));
+            onSnapshot(qScores, (snapshot) => {
+                const chartData = snapshot.docs.map(doc => ({ date: doc.id, ...doc.data() })).reverse();
+                renderChart(chartData);
+            });
+
+            const weightColRef = collection(db, `artifacts/${appId}/public/data/winter-arc-weight-tracking`);
+            const qWeight = query(weightColRef, orderBy("date", "asc"));
+            onSnapshot(qWeight, (snapshot) => {
+                const weightData = snapshot.docs.map(doc => ({ date: doc.id, ...doc.data() }));
+                renderWeightChart(weightData);
+            }, (error) => {
+                console.error("Firestore Permission Error (Weight Tracking):", error);
+                const weightChartContainer = document.getElementById('weight-chart').parentElement;
+                weightChartContainer.innerHTML = `<div class="text-left p-4 bg-red-900 border border-red-500 rounded-md">...</div>`;
+            });
+        }
+        
+        async function handleSaveWeight() {
+            const weight = parseFloat(weightInput.value);
+            if (isNaN(weight) || weight <= 0) {
+                alert("Please enter a valid weight.");
+                return;
+            }
+            const todayKey = new Date().toISOString().split('T')[0];
+            await saveWeightData(weight, todayKey);
+            weightInput.value = '';
+        }
+
+        async function saveWeightData(weight, dateKey) {
+            const weightDocRef = doc(db, `artifacts/${appId}/public/data/winter-arc-weight-tracking`, dateKey);
+            try {
+                await setDoc(weightDocRef, { date: dateKey, weights: { [userId]: weight } }, { merge: true });
+                alert(`Weight saved: ${weight} kg for ${dateKey}`);
+            } catch (error) {
+                console.error("Failed to save weight data:", error);
+                alert("Could not save your weight. Please try again.");
+            }
+        }
+        
+        // RESTORED: This function was missing
+        async function saveOptionalTaskTitle(title) {
+            if (!title.trim()) {
+                alert("Please enter a title for your optional goal.");
+                return;
+            }
+            const gameDateKey = getGameDateKey();
+            const dailyTasksDocRef = doc(db, `artifacts/${appId}/public/data/winter-arc-tasks`, gameDateKey);
+            try {
+                await setDoc(dailyTasksDocRef, { optionalTitles: { [userId]: title.trim() } }, { merge: true });
+                alert("Optional goal saved!");
+            } catch (error) {
+                console.error("Failed to save optional goal:", error);
+                alert("Error saving goal. Check console.");
+            }
+        }
+
+        async function handleTaskUpdate(taskId, points, isUndo = false) { 
+            const gameDateKey = getGameDateKey();
+            const leaderboardDocRef = doc(db, `artifacts/${appId}/public/data/winter-arc-challenge`, 'leaderboard');
+            const dailyTasksDocRef = doc(db, `artifacts/${appId}/public/data/winter-arc-tasks`, gameDateKey);
+            const dailyScoreDocRef = doc(db, `artifacts/${appId}/public/data/winter-arc-daily-scores`, gameDateKey);
+
+            const scoreChange = isUndo ? -points : points;
+
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const dailyTasksDoc = await transaction.get(dailyTasksDocRef);
+                    
+                    if (isUndo) {
+                         if (dailyTasksDoc.data()?.tasks?.[taskId] !== userId) throw "Cannot undo another player's task.";
+                         transaction.update(dailyTasksDocRef, { [`tasks.${taskId}`]: deleteField() });
+                    } else {
+                         if (taskId === 'optional' && !dailyDoc?.optionalTitles?.[userId]) throw "Please save your optional goal title first.";
+                         if (dailyTasksDoc.data()?.tasks?.[taskId]) throw "Task already completed.";
+                         transaction.set(dailyTasksDocRef, { tasks: { [taskId]: userId } }, { merge: true });
+                    }
+                    
+                    transaction.set(leaderboardDocRef, { scores: { [userId]: increment(scoreChange) } }, { merge: true });
+                    transaction.set(dailyScoreDocRef, { date: gameDateKey, scores: { [userId]: increment(scoreChange) } }, { merge: true });
+                });
+            } catch (error) {
+                console.error("Transaction failed: ", error);
+                alert(error);
+            }
+        }
+        async function handleFullReset() { 
+            const confirmation = confirm("Are you absolutely sure you want to reset the challenge? This will delete the leaderboard and all total scores permanently. This action cannot be undone.");
+
+            if (confirmation) {
+                try {
+                    const leaderboardDocRef = doc(db, `artifacts/${appId}/public/data/winter-arc-challenge`, 'leaderboard');
+                    await deleteDoc(leaderboardDocRef);
+                    localStorage.removeItem('cousinId');
+                    alert("Challenge has been reset successfully. The page will now reload.");
+                    location.reload();
+                } catch (error) {
+                    console.error("Failed to reset data:", error);
+                    alert("An error occurred while trying to reset the data. Please check the console.");
+                }
+            }
+        }
+
+        // --- 5. UI & CHART RENDERING ---
+        function renderUI() {
+            if (!dailyDoc) return;
+            
+            const currentTasks = dailyDoc.tasks || {};
+            const optionalTitles = dailyDoc.optionalTitles || {};
+            
+            quoteDisplay.textContent = dailyDoc.quote || DAILY_QUOTE;
+            
+            if(currentScores) {
+                const playerIds = [userId, cousinId].filter(id => id);
+                playerIds.forEach((pId, index) => {
+                    const nameEl = document.getElementById(`player-${index}-name`);
+                    const scoreEl = document.getElementById(`player-${index}-score`);
+                    const scoreBgEl = document.getElementById(`player-${index}-score-bg`);
+                    
+                    nameEl.textContent = pId === userId ? PLAYER_NAMES.me : PLAYER_NAMES.cousin;
+                    const newScore = currentScores[pId] || 0;
+                    if (parseInt(scoreEl.textContent) !== newScore) {
+                         scoreEl.textContent = newScore;
+                         scoreBgEl.classList.add('score-update');
+                         setTimeout(() => scoreBgEl.classList.remove('score-update'), 500);
+                    }
+                });
+                const p0Score = currentScores[playerIds[0]] || 0;
+                const p1Score = playerIds.length > 1 ? (currentScores[playerIds[1]] || 0) : -1;
+                const p0ScoreBg = document.getElementById('player-0-score-bg');
+                const p1ScoreBg = document.getElementById('player-1-score-bg');
+                p0ScoreBg.classList.toggle('scale-110', p0Score > p1Score);
+                p1ScoreBg.classList.toggle('scale-110', p1Score > p0Score);
+            }
+            
+            taskListContainer.innerHTML = '';
+            NECESSARY_TASKS.forEach(task => {
+                const completedBy = currentTasks[task.id];
+                const taskDiv = createTaskElement(task, completedBy, optionalTitles);
+                taskListContainer.appendChild(taskDiv);
+            });
+            const optionalTaskDiv = createOptionalTaskElement(OPTIONAL_TASK, currentTasks[OPTIONAL_TASK.id], optionalTitles);
+            taskListContainer.appendChild(optionalTaskDiv);
+        }
+
+        function createTaskElement(task, completedBy, optionalTitles) {
+            const isCompleted = !!completedBy;
+            const taskDiv = document.createElement('div');
+            taskDiv.className = `p-4 rounded-xl flex items-center justify-between transition-all duration-300 ${isCompleted ? 'bg-gray-700 opacity-60' : 'bg-gray-800 hover:bg-gray-700'}`;
+            
+            let taskTitle = task.title;
+            if (task.id === 'optional' && optionalTitles[completedBy]) {
+                taskTitle = `Completed: ${optionalTitles[completedBy]}`;
+            }
+
+            let completerName = completedBy ? (completedBy === userId ? ` (by ${PLAYER_NAMES.me})` : ` (by ${PLAYER_NAMES.cousin})`) : '';
+
+            taskDiv.innerHTML = `<div><p class="font-bold text-lg ${isCompleted ? 'text-gray-400 line-through' : 'text-white'}">${taskTitle}</p><p class="text-teal-400 font-semibold">${task.points} Points ${completerName}</p></div>`;
+
+            if (!isCompleted) {
+                const completeButton = document.createElement('button');
+                completeButton.className = "bg-teal-500 text-white p-3 rounded-full hover:bg-teal-400 transform hover:scale-110 transition-transform duration-200";
+                completeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                completeButton.onclick = () => handleTaskUpdate(task.id, task.points, false);
+                taskDiv.appendChild(completeButton);
+            } else if (completedBy === userId) {
+                const undoButton = document.createElement('button');
+                undoButton.className = "bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition-transform duration-200 text-sm font-semibold";
+                undoButton.innerHTML = 'Undo';
+                undoButton.onclick = () => handleTaskUpdate(task.id, task.points, true);
+                taskDiv.appendChild(undoButton);
+            }
+            return taskDiv;
+        }
+
+        // RESTORED: This function was missing
+        function createOptionalTaskElement(task, completedBy, optionalTitles) {
+            const myOptionalTitle = optionalTitles[userId] || '';
+            
+            if (completedBy) {
+                return createTaskElement(task, completedBy, optionalTitles);
+            }
+
+            const formDiv = document.createElement('div');
+            formDiv.className = 'p-4 rounded-xl bg-gray-800 border-t-4 border-purple-500 space-y-3';
+            formDiv.innerHTML = `<p class="font-bold text-lg text-white">${task.title}</p>`;
+            const inputContainer = document.createElement('div');
+            inputContainer.className = 'flex items-center space-x-2';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = myOptionalTitle;
+            input.placeholder = 'Define your goal for the day...';
+            input.className = 'flex-grow p-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:border-purple-500';
+            inputContainer.appendChild(input);
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'flex items-center space-x-2';
+            const saveButton = document.createElement('button');
+            saveButton.className = 'bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-500 flex-grow';
+            saveButton.textContent = 'Save Goal';
+            saveButton.onclick = () => saveOptionalTaskTitle(input.value);
+            const completeButton = document.createElement('button');
+            completeButton.className = 'bg-teal-500 text-white p-3 rounded-full hover:bg-teal-400 transform hover:scale-110 transition-transform';
+            completeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            completeButton.onclick = () => handleTaskUpdate(task.id, task.points, false);
+            buttonContainer.appendChild(saveButton);
+            buttonContainer.appendChild(completeButton);
+            formDiv.appendChild(inputContainer);
+            formDiv.appendChild(buttonContainer);
+            return formDiv;
+        }
+        
+        function renderChart(data) {
+            if (chartInstance) chartInstance.destroy();
+            if (!userId) return;
+
+            const labels = [];
+            const myScoresData = [];
+            const cousinScoresData = [];
+
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateKey = date.toISOString().split('T')[0];
+                labels.push(dateKey.substring(5)); // MM-DD format
+
+                const dayData = data.find(d => d.date === dateKey);
+                myScoresData.push(dayData?.scores?.[userId] || 0);
+                if (cousinId) {
+                    cousinScoresData.push(dayData?.scores?.[cousinId] || 0);
+                }
+            }
+
+            const datasets = [{
+                label: PLAYER_NAMES.me,
+                data: myScoresData,
+                borderColor: 'rgb(20, 184, 166)',
+                backgroundColor: 'rgba(20, 184, 166, 0.5)',
+                tension: 0.2,
+                fill: true,
+            }];
+
+            if (cousinId) {
+                datasets.push({
+                    label: PLAYER_NAMES.cousin,
+                    data: cousinScoresData,
+                    borderColor: 'rgb(99, 102, 241)',
+                    backgroundColor: 'rgba(99, 102, 241, 0.5)',
+                    tension: 0.2,
+                    fill: true,
+                });
+            }
+
+            chartInstance = new Chart(chartCanvas, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: 'white' } },
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: 'white' } }
+                    },
+                    plugins: { legend: { labels: { color: 'white' } } }
+                }
+            });
+        }
+
+        function renderWeightChart(data) {
+            if (weightChartInstance) weightChartInstance.destroy();
+            if (!userId) return;
+
+            const labels = data.map(d => d.date.substring(5));
+            const myWeights = data.map(d => d.weights?.[userId] || null);
+            const cousinWeights = cousinId ? data.map(d => d.weights?.[cousinId] || null) : [];
+
+            const datasets = [{
+                label: `${PLAYER_NAMES.me} (Weight)`,
+                data: myWeights,
+                borderColor: 'rgb(234, 179, 8)', // Yellow
+                backgroundColor: 'rgba(234, 179, 8, 0.5)',
+                tension: 0.1,
+                spanGaps: true,
+            }];
+
+            if (cousinId) {
+                datasets.push({
+                    label: `${PLAYER_NAMES.cousin} (Weight)`,
+                    data: cousinWeights,
+                    borderColor: 'rgb(236, 72, 153)', // Pink
+                    backgroundColor: 'rgba(236, 72, 153, 0.5)',
+                    tension: 0.1,
+                    spanGaps: true,
+                });
+            }
+
+            weightChartInstance = new Chart(weightChartCanvas, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: false, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: 'white' } },
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: 'white' } }
+                    },
+                    plugins: { legend: { labels: { color: 'white' } } }
+                }
+            });
+        }
+
+        main();
+    </script>
+</body>
+</html>

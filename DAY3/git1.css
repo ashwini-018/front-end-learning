@@ -1,0 +1,17 @@
+.war
+{
+    border: width 3px;;
+    border-color: rgb(21, 255, 0);
+    border-style: solid;
+    margin: 20px;
+    padding-left: 20px;
+}
+
+.war1
+{
+    border: width 3px;;
+    border-color: blue;
+    border-style: groove;
+    margin: 20px;
+    padding-left: 20px;
+}

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
+    <title>New Button</title>
+</head>
+<body>
+    <button onclick="SUM()">Add 7 + 3</button>
+
+    <p id="Res"></p>
+
+    <script>
+        function add(a,b)
+        {
+            return a + b;
+        };
+
+        function SUM()
+        {
+            let sum = add(7,3);
+            document.getElementById("Res").innerText + "Sum = " +sum;
+        };
+        alert(SUM());
+        //SUM();
+    </script>
+</body>
+</html>

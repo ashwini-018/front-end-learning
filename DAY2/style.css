@@ -1,0 +1,24 @@
+h1
+{
+    color: rgb(245, 70, 99);
+    text-align: center;
+    background-color: rgb(250, 191, 235);
+}
+h3
+{
+    color: rgb(245, 70, 99);
+    text-align: center;
+    background-color: rgb(250, 191, 235);
+}
+
+
+p
+{
+    font-size: 40px;
+    font-style: italic;
+    letter-spacing: 10px;
+    word-spacing: 20px;
+    line-height: 1.9;
+    text-shadow: 3px 3px 5px rgb(106, 195, 11);
+
+}

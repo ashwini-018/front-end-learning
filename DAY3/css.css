@@ -1,0 +1,14 @@
+div.greerDiv .greet
+{
+    color: green;
+}
+
+.greerDiv p.greet
+{
+    color: blue;
+}
+
+.greerDiv .greet
+{
+    color: red;
+}
